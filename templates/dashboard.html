@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Welcome, {{ user_name }}!</h3>
+    <div>
+      <a class="btn btn-outline-primary me-2" href="{{ url_for('add_webapp') }}">Add Web-App</a>
+      <a class="btn btn-primary" href="{{ url_for('my_webapps') }}">My Web-Apps</a>
+    </div>
+  </div>
+
+  <p class="muted">Add .html web-apps and protect them with image-based passwords. When you open a protected app it will ask for an image sequence (decoys mixed in).</p>
+
+  <div class="mt-4">
+    <h5 class="mb-3">Quick tips</h5>
+    <ul class="muted">
+      <li>Put images into <code>static/images/<category>/</code> (e.g., flowers, fruits, emojis).</li>
+      <li>Name files any way (apple.png, 1.png). The app reads actual filenames.</li>
+      <li>Your image password is stored hashed — only the correct sequence will unlock.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

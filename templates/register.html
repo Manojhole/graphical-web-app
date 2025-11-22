@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h3 class="mb-3">Create an account</h3>
+  <form method="post" class="row g-3">
+    <div class="col-12">
+      <label class="form-label">Name</label>
+      <input class="form-control" name="name" value="{{ name|default('') }}" required>
+    </div>
+    <div class="col-12 col-md-6">
+      <label class="form-label">Mobile (10 digits)</label>
+      <input class="form-control" name="mobile" value="{{ mobile|default('') }}" required pattern="\d{10}">
+    </div>
+    <div class="col-12 col-md-6">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-control" name="password" required>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Hint (optional)</label>
+      <input class="form-control" name="hint" value="{{ hint|default('') }}">
+      <div class="form-text muted">Used to help recover your password or image-password.</div>
+    </div>
+
+    <div class="col-12">
+      <button class="btn btn-primary">Register</button>
+      <a href="{{ url_for('login') }}" class="btn btn-link">Already have an account?</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

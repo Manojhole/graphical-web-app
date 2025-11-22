@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h3>Add New Web-App (.html)</h3>
+  <p class="muted">Upload a simple static .html file. It will open in a new tab but remain locked until unlocked.</p>
+
+  <form method="post" enctype="multipart/form-data" class="mt-3">
+    <div class="mb-3">
+      <label class="form-label">Choose HTML File</label>
+      <input type="file" name="file" class="form-control" accept=".html" required>
+    </div>
+
+    <button class="btn btn-primary">Upload Web-App</button>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-link ms-2">Back</a>
+  </form>
+</div>
+{% endblock %}

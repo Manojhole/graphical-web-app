@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Unlock Web-App</h3>
+    <a class="btn btn-outline-secondary" href="{{ url_for('my_webapps') }}">Back</a>
+  </div>
+
+  <p class="muted">This app uses an image-password stored under category <strong>{{ password_category }}</strong>. Images below are mixed from all categories to act as decoys — select the exact sequence to unlock.</p>
+
+  <div class="mt-3">
+    <div id="images-area" class="image-grid">
+      {% for path in mixed_images %}
+        {% set parts = path.split('/') %}
+        {% set cat = parts[0] %}
+        {% set fname = parts[1] %}
+        <div class="img-card" data-path="{{ cat }}/{{ fname }}">
+          <img src="{{ url_for('static', filename='images/' + cat + '/' + fname) }}" alt="{{ fname }}" loading="lazy">
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="mt-4 d-flex align-items-center justify-content-between">
+    <div>
+      <div class="form-text muted">Selected sequence (order matters):</div>
+      <div id="preview" class="sequence-preview mt-2"></div>
+    </div>
+
+    <div>
+      <button id="unlockBtn" class="btn btn-primary me-2">Unlock</button>
+      <button id="clearBtn" class="btn btn-outline-secondary">Clear</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let selected = [];
+const preview = document.getElementById('preview');
+const imagesArea = document.getElementById('images-area');
+
+function renderPreview(){
+  preview.innerHTML = '';
+  selected.forEach((path, idx) => {
+    const parts = path.split('/');
+    const fname = parts.slice(1).join('/');
+    const div = document.createElement('div');
+    div.className = 'img-card';
+    div.style.width = '52px';
+    div.style.height = '52px';
+    div.style.padding = '6px';
+    div.style.cursor = 'default';
+    div.innerHTML = `<div class="order-badge" style="top:4px;left:4px;">${idx+1}</div><img src="/static/images/${parts[0]}/${fname}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">`;
+    preview.appendChild(div);
+  });
+}
+
+imagesArea.querySelectorAll('.img-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const path = card.getAttribute('data-path');
+    const idx = selected.indexOf(path);
+    if (idx === -1) {
+      selected.push(path);
+      card.classList.add('img-picked');
+    } else {
+      selected.splice(idx,1);
+      card.classList.remove('img-picked');
+    }
+    renderPreview();
+    // animate briefly
+    card.animate([{ transform: 'scale(1.03)' }, { transform: 'scale(1)' }], { duration: 160 });
+  });
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  selected = [];
+  renderPreview();
+  imagesArea.querySelectorAll('.img-card').forEach(c => c.classList.remove('img-picked'));
+});
+
+document.getElementById('unlockBtn').addEventListener('click', async () => {
+  if (selected.length === 0) { alert('Select at least one image'); return; }
+  // POST selected as array of 'category/filename'
+  const resp = await fetch('{{ url_for("unlock_webapp", app_id=app_id) }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({sequence:selected})
+  });
+  const data = await resp.json();
+  if (data.ok) {
+    // show success micro-interaction
+    alert('Unlocked — web-app opened in a new tab.');
+    window.open(data.url, '_blank');
+    window.location.href = '{{ url_for("my_webapps") }}';
+  } else {
+    // shake animation on fail
+    const el = document.querySelector('.panel');
+    el.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { duration: 220 });
+    alert('Unlock failed: ' + data.msg);
+  }
+});
+</script>
+{% endblock %}

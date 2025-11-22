@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h3 class="mb-3">Welcome back</h3>
+  <form method="post" class="row g-3">
+    <div class="col-12">
+      <label class="form-label">Mobile</label>
+      <input class="form-control" name="mobile" value="{{ mobile|default('') }}" required pattern="\d{10}">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-control" name="password" required>
+    </div>
+
+    <div class="col-12 d-flex gap-2 align-items-center">
+      <button class="btn btn-primary">Login</button>
+      <a href="{{ url_for('forgot_password') }}" class="btn btn-link">Forgot password?</a>
+      <a href="{{ url_for('register') }}" class="ms-auto btn btn-outline-secondary">Create account</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

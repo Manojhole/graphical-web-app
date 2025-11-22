@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ title|default("Image Locker") }}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+      :root{
+        --brand:#0d6efd;
+        --muted:#6c757d;
+        --bg:#f7f9fb;
+        --card:#ffffff;
+        --radius:12px;
+        --shadow: 0 6px 18px rgba(15,23,42,0.06);
+      }
+
+      /* page */
+      body{ background: var(--bg); color:#14213d; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+      .container { max-width:1100px; }
+
+      /* navbar */
+      .navbar { background: transparent; }
+      .brand { font-weight:600; font-size:1.05rem; color: #0b5ed7; }
+      .nav-right { display:flex; gap:10px; align-items:center; }
+
+      /* cards / panels */
+      .panel {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding:22px;
+        box-shadow: var(--shadow);
+      }
+
+      /* image grid */
+      .image-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:14px; align-items:stretch; }
+      .img-card {
+        background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(245,247,250,0.8));
+        border-radius:10px;
+        padding:10px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        position:relative;
+        overflow:hidden;
+        height:110px;
+        cursor:pointer;
+        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+        border: 2px solid transparent;
+      }
+      .img-card img {
+        max-width:100%;
+        max-height:100%;
+        border-radius:8px;
+        object-fit:cover;
+        display:block;
+        opacity:0;
+        transform:translateY(6px) scale(.99);
+        transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.2,1);
+      }
+      .img-card.loaded img { opacity:1; transform: translateY(0) scale(1); }
+      .img-card:hover { transform: translateY(-6px); box-shadow: 0 10px 30px rgba(13,110,253,0.08); }
+
+      /* picked style */
+      .img-picked { box-shadow: 0 10px 28px rgba(13,110,253,0.14) !important; border: 2px solid var(--brand) !important; transform: translateY(-6px) scale(1.02) !important; }
+      .order-badge {
+        position:absolute;
+        top:8px;
+        left:8px;
+        background:var(--brand);
+        color:white;
+        font-size:12px;
+        width:26px;
+        height:26px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:8px;
+        box-shadow: 0 6px 16px rgba(13,110,253,0.12);
+      }
+
+      /* preview */
+      .sequence-preview { min-height:56px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+      /* form helpers */
+      label.form-label { font-weight:600; color:#152236; }
+      .muted { color:var(--muted); }
+
+      /* responsive spacing */
+      .top-gap { margin-top:14px; }
+      .mb-20 { margin-bottom:20px; }
+
+      /* small screens */
+      @media (max-width:600px){
+        .image-grid { grid-template-columns: repeat(3, 1fr); gap:10px; }
+        .img-card { height:88px; padding:8px; }
+      }
+    </style>
+
+    <!-- small utility JS lib for animation helpers (no external libs) -->
+    <script>
+      // helper to add loaded class when image is ready
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.img-card img').forEach(img => {
+          if (img.complete && img.naturalWidth !== 0) {
+            img.closest('.img-card').classList.add('loaded');
+          } else {
+            img.addEventListener('load', () => {
+              img.closest('.img-card').classList.add('loaded');
+            });
+            img.addEventListener('error', () => {
+              // hide broken images gracefully
+              img.closest('.img-card').style.opacity = .35;
+            });
+          }
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <nav class="navbar mb-4">
+      <div class="container d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+          <a href="{{ url_for('dashboard') }}" class="brand">Image Locker</a>
+        </div>
+        <div class="nav-right">
+          {% if session.user_id %}
+            <div class="text-muted small">Hi, <strong>{{ session.user_name }}</strong></div>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('logout') }}">Logout</a>
+          {% else %}
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('login') }}">Login</a>
+            <a class="btn btn-primary btn-sm" href="{{ url_for('register') }}">Register</a>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mb-5">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, msg in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ msg }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

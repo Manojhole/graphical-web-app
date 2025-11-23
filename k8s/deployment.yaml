@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graphical-web-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: graphical-web-app
+  template:
+    metadata:
+      labels:
+        app: graphical-web-app
+    spec:
+      containers:
+      - name: graphical-web-app
+        image: ghcr.io/YOUR_GITHUB_USERNAME/graphical-web-app:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000

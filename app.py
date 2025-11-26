@@ -174,7 +174,7 @@ def dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard.html', user_name=session.get('user_name'))
 
-# ---------- FORGOT PASSWORD (account password) ----------
+# ---------- FORGOT PASSWORD ----------
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
@@ -188,13 +188,12 @@ def forgot_password():
             flash('No account found with that mobile number.', 'danger')
             return render_template('forgot_password.html')
 
-        flash('If you remember your hint, it may help. For security this app only displays the hint you set during registration.', 'info')
+        flash('Stored hint:', 'info')
         return render_template('forgot_password.html', hint=user.hint, mobile=mobile)
 
     return render_template('forgot_password.html')
 
-
-# ---------- UPLOAD / MANAGE WEB-APPS ----------
+# ---------- UPLOAD WEB-APPS ----------
 @app.route('/add-webapp', methods=['GET', 'POST'])
 def add_webapp():
     if not user_required():
@@ -203,11 +202,11 @@ def add_webapp():
     if request.method == 'POST':
         file = request.files.get('file')
         if not file:
-            flash('Please choose an HTML file to upload.', 'warning')
+            flash('Please choose an HTML file.', 'warning')
             return render_template('add_webapp.html')
 
         if not file.filename.lower().endswith('.html'):
-            flash('Only .html files are allowed.', 'danger')
+            flash('Only .html files allowed.', 'danger')
             return render_template('add_webapp.html')
 
         safe_name = secure_filename(file.filename)
@@ -225,7 +224,7 @@ def add_webapp():
         db.session.add(entry)
         db.session.commit()
 
-        flash('Web-app uploaded successfully.', 'success')
+        flash('Web-app uploaded.', 'success')
         return redirect(url_for('my_webapps'))
 
     return render_template('add_webapp.html')
@@ -246,7 +245,7 @@ def my_webapps():
         })
     return render_template('my_webapps.html', apps=apps_info)
 
-
+# ---------- DELETE APP ----------
 @app.route('/delete-webapp/<int:app_id>')
 def delete_webapp(app_id):
     if not user_required():
@@ -269,7 +268,7 @@ def delete_webapp(app_id):
     flash('Web-app deleted.', 'success')
     return redirect(url_for('my_webapps'))
 
-
+# ---------- SERVE UPLOADED HTML ----------
 @app.route('/uploaded_apps/<path:filename>')
 def uploaded_app_file(filename):
     safe_filename = secure_filename(filename)
@@ -278,14 +277,13 @@ def uploaded_app_file(filename):
         abort(404)
     return send_from_directory(app.config['UPLOAD_FOLDER'], safe_filename)
 
-
+# ---------- API: LIST IMAGES ----------
 @app.route('/list-images/<category>')
 def api_list_images(category):
     if '/' in category or '\\' in category or category.startswith('.'):
         return jsonify([])
     images = list_images_in_category(category)
     return jsonify(images)
-
 
 def build_shuffled_all_images():
     cats = list_image_categories()
@@ -297,7 +295,7 @@ def build_shuffled_all_images():
     random.shuffle(combined)
     return combined
 
-
+# ---------- OPEN LOCKED WEBAPP ----------
 @app.route('/open/<int:app_id>', methods=['GET'])
 def open_webapp(app_id):
     if not user_required():
@@ -309,7 +307,7 @@ def open_webapp(app_id):
 
     ip = ImagePassword.query.filter_by(app_id=app_id).first()
     if not ip:
-        flash('This web-app does not have an image-password yet. Please set one first.', 'info')
+        flash('No image password set.', 'info')
         return redirect(url_for('set_image_password', app_id=app_id))
 
     if is_unlocked(app_id):
@@ -318,7 +316,7 @@ def open_webapp(app_id):
     mixed = build_shuffled_all_images()
     return render_template('lock_screen.html', app_id=app_id, mixed_images=mixed, password_category=ip.category, filename=app_entry.filename)
 
-
+# ---------- SET IMAGE PASSWORD ----------
 @app.route('/set-image-password/<int:app_id>', methods=['GET', 'POST'])
 def set_image_password(app_id):
     if not user_required():
@@ -332,7 +330,7 @@ def set_image_password(app_id):
         seq_raw = request.form.get('sequence')
         hint = request.form.get('hint', '').strip()
         if not category or not seq_raw:
-            flash('Choose category and select at least one image for the password.', 'warning')
+            flash('Choose category and images.', 'warning')
             return redirect(url_for('set_image_password', app_id=app_id))
 
         try:
@@ -366,13 +364,13 @@ def set_image_password(app_id):
             db.session.add(ip)
 
         db.session.commit()
-        flash('Image password set for this web-app.', 'success')
+        flash('Image password updated.', 'success')
         return redirect(url_for('my_webapps'))
 
     categories = list_image_categories()
     return render_template('set_image_password.html', app_id=app_id, categories=categories)
 
-
+# ---------- UNLOCK ----------
 @app.route('/unlock/<int:app_id>', methods=['POST'])
 def unlock_webapp(app_id):
     if not user_required():
@@ -384,7 +382,7 @@ def unlock_webapp(app_id):
 
     ip = ImagePassword.query.filter_by(app_id=app_id).first()
     if not ip:
-        return jsonify({'ok': False, 'msg': 'No image password set for this app'}), 400
+        return jsonify({'ok': False, 'msg': 'No image password set'}), 400
 
     data = request.get_json() or {}
     seq_list = data.get('sequence')
@@ -406,7 +404,7 @@ def unlock_webapp(app_id):
     else:
         return jsonify({'ok': False, 'msg': 'Incorrect sequence'}), 403
 
-
+# ---------- FORGOT IMAGE PASSWORD ----------
 @app.route('/forgot-image-password/<int:app_id>', methods=['GET', 'POST'])
 def forgot_image_password(app_id):
     if not user_required():
@@ -414,13 +412,13 @@ def forgot_image_password(app_id):
     app_entry = UploadedApp.query.get(app_id)
     if not app_entry or not app_owned_by_user(app_entry, session['user_id']):
         abort(403)
-    ip = ImagePassword.query.filter_by(app_id=app_id).first()
+    ip = ImagePassword.query.filter_by(app_id=app_entry.id).first()
     if not ip:
         flash('No image password set for this app.', 'info')
         return redirect(url_for('my_webapps'))
 
     if request.method == 'POST':
-        flash('Stored hint (you set when creating image-password):', 'info')
+        flash('Stored hint:', 'info')
         return render_template('forgot_image_password.html', hint=ip.hint, app_id=app_id)
     return render_template('forgot_image_password.html', app_id=app_id)
 
@@ -431,7 +429,8 @@ def init_db():
     print("DB initialized.")
 
 
+# ---------- RUN SERVER ----------
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=False)
